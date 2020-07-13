@@ -29,6 +29,7 @@ from peewee import (
     CompositeKey,
 )
 from time import time
+from playhouse.sqlite_ext import SqliteExtDatabase
 
 #################################
 ### GLOBAL PROTOCOL CONSTANTS ###
@@ -37,7 +38,10 @@ from time import time
 EPOCH_START = 0
 
 
-db = SqliteDatabase(None)
+# Set connections timeout to 3 seconds
+db = SqliteExtDatabase(
+    None, regexp_function=True, timeout=3, pragmas={"journal_mode": "wal"}
+)
 
 
 class BaseModel(Model):

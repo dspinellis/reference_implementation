@@ -98,14 +98,14 @@ def generate_random_bdaddr():
 
     # The values below denote that the bdaddr is locally administered
     locally_administered_elements = ['2', '6', 'a', 'e']
-   
-    # if locally_administered_elements = 2 then (5, 2, 3, 0, c, 4, a, 1, 9, c, 1, e)
+    
     bdaddr[1] = secrets.choice(locally_administered_elements)
-    # (5, 2,3, 0, c, 4, a, 1, 9, c, 1, e) -> 5230c4a19c1e
+    # (5, 2, 3, 0, c, 4, a, 1, 9, c, 1, e) -> 5230c4a19c1e
     bdaddr = ''.join(bdaddr)
-    # 52:30:c4:a1:9c:1e
-    return ':'.join(bdaddr[i:i+2] for i in range(0, len(bdaddr), 2))
-
+    # 52 0x30 0xc4 0xa1 0x9c 0x1e
+    bdaddr = ' 0x'.join(bdaddr[i:i+2] for i in range(0, len(bdaddr), 2))
+    # 0x52 0x30 0xc4 0xa1 0x9c 0x1e
+    return '0x' + bdaddr
 
 def main():
     parser = argparse.ArgumentParser(description="Contact tracing beacon trasmitter")
@@ -159,12 +159,6 @@ def main():
 
     interface = f"hci{args.iface}"
 
-    # Enable the Bluetooth interface
-    run_command(["hciconfig", interface, "up"])
-
-    # Enable non connectable undirected LE advertising
-    run_command(["hciconfig", interface, "leadv", "3"])
-
     # Transmit and store beacon packets
     current_ephid = None
     transmitter = ContactTracer(None, args.database, receiver=False)
@@ -174,21 +168,24 @@ def main():
         transmitter.check_advance_day(now)
         ephid = transmitter.get_ephid_for_time(now)
         if ephid != current_ephid:
-            # Stop advetising before changing bdaddr
-            run_command(["hciconfig", interface, "noleadv"])
-            
+
             # Generate random bdaddr
             bdaddr = generate_random_bdaddr()
+            bdaddr = bdaddr.split()
 
-            # Change local device bdaddr and reset
-            run_command(["bdaddr", "-i", interface, "-r", bdaddr])
-            run_command(["hciconfig", interface, "reset"])
-            run_command(["hciconfig", interface, "up"])
-            run_command(["hciconfig", interface, "leadv", "3"])
+            # Change local device bdaddr
+            run_command(["hcitool", "-i", interface, "cmd", "0x3f", "0x001", bdaddr[5], bdaddr[4], bdaddr[3], bdaddr[2], bdaddr[1], bdaddr[0]])
             
+            # Enable the bluetooth interface
+            run_command(["hciconfig", interface, "up"])
+
+            # Enable LE advertising
+            run_command(["hciconfig", interface, "leadv", "3"])
+
             set_transmit(interface, ephid, args.rssi)
             current_ephid = ephid
             logger.debug(f"Change ephid to {ephid.hex()}")
+
         # Wait for the current epoch (e.g. 15 minutes) to pass
         # The API can't tell us TTL, so sample every minute
         sleeper.sleep(EPOCH_LENGTH / 60)

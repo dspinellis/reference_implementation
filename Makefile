@@ -14,7 +14,6 @@ package:
 	dpkg-buildpackage --build=binary --unsigned-source --unsigned-changes
 
 install: $(DEB)
-	$(MAKE) -C epidose/device/bdaddr install
 	-apt-get -y remove epidose
 	rm -rf /opt/venvs/epidose
 	dpkg -i $(DEB)

@@ -420,6 +420,10 @@ Below are links to information directly relevant to this project.
 * [ACM Europe TPC Statement on Principles, Practices for COVID-19 Contact Tracing Applications](https://www.acm.org/binaries/content/assets/public-policy/europe-tpc-contact-tracing-statement.pdf)
 
 
+## Acknowledgements
+Special thanks to [Alexandre De Masi](https://www.qualityoflifetechnologies.com/team-members/msc-alexandre-de-masi/) for providing us with network traces to verify our implementation.
+
+
 ## License
 
 Unless otherwise noted, this code is licensed under the Apache 2.0 license,
