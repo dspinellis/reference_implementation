@@ -31,7 +31,6 @@ setuptools.setup(
         "requests",
         "RPi.GPIO",
         "scalable-cuckoo-filter",
-        "xmlrpc",
     ],
     extras_require={
         "dev": ["black", "flake8", "pre-commit"],

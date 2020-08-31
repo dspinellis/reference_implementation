@@ -25,9 +25,11 @@ from datetime import datetime
 from dp3t.protocols.unlinkable_db import ContactTracer
 from epidose.common.daemon import Daemon
 from epidose.device.beacon_format import BLE_PACKET
+from epidose.common.interruptible_sleep import InterruptibleSleep
 import struct
 import sys
-
+import time
+import signal
 
 OGF_LE_CTL = 0x08
 OCF_LE_SET_SCAN_ENABLE = 0x000C
@@ -78,7 +80,9 @@ def process_packet(socket):
     # Print sender's Bluetooth MAC address
     bdaddr = packet[7:13]
     bdaddr = bdaddr[::-1].hex().upper()
-    logger.debug(f"Received packet from {':'.join(bdaddr[i:i+2] for i in range(0, len(bdaddr), 2))}")
+    logger.debug(
+        f"Received packet from {':'.join(bdaddr[i:i+2] for i in range(0, len(bdaddr), 2))}"
+    )
 
     # This is a contact detection service packet
     ephid = packet[25:41]
@@ -127,9 +131,23 @@ def main():
     if args.test:
         sys.exit(0)
     socket = bluez.hci_open_dev(args.iface)
-    set_receive(socket)
+    # set_receive(socket)
+    sleeper = InterruptibleSleep([signal.SIGTERM, signal.SIGINT])
     while True:
-        process_packet(socket)
+        # Scan and receive beacon packets for 20 seconds
+        t_end = time.time() + 20
+
+        while time.time() < t_end:
+            set_receive(socket)
+            process_packet(socket)
+
+        # The second argument of the function below denotes that the BLE scannig is off
+        disable_scanning = struct.pack("<BB", 0x00, 0x00)
+        bluez.hci_send_cmd(socket, OGF_LE_CTL, OCF_LE_SET_SCAN_ENABLE, disable_scanning)
+        logger.debug("Entering energy saving mode, turning off BLE packets receiver.")
+
+        # Use uninterabtable sleep for 60 seconds
+        sleeper.sleep(60)
 
 
 if __name__ == "__main__":
