@@ -27,26 +27,8 @@ from datetime import datetime
 from dp3t.protocols.unlinkable_db import ContactTracer
 from epidose.device.beacon_format import BLE_PACKET
 import signal
-import subprocess
 import secrets
 from sys import exit
-
-
-def run_command(cmd):
-    """Run (or simulate the running of) the specified command.
-    Log the command to be run.
-    Do not run the command if dry_run is set.
-    Log operating system and command errors.
-    """
-    logger.debug(" ".join(cmd))
-    if dry_run:
-        return
-    try:
-        subprocess.run(cmd, check=True, capture_output=True)
-    except subprocess.CalledProcessError as e:
-        logger.error(f"{cmd[0]} failed with code {e.returncode}: {e.stderr}")
-    except OSError as e:
-        logger.error(f"Failed to run {cmd[0]}: {e.strerror}")
 
 
 def set_transmit(interface, ephid, rssi):
@@ -82,7 +64,7 @@ def set_transmit(interface, ephid, rssi):
 
     cmd.append(format(rssi, "x"))  # Reference RSSI
     cmd.append("01")  # Manufacturer reserved
-    run_command(cmd)
+    daemon.run_command(cmd)
 
 
 def generate_random_bdaddr():
@@ -97,15 +79,16 @@ def generate_random_bdaddr():
     bdaddr = list(bdaddr)
 
     # The values below denote that the bdaddr is locally administered
-    locally_administered_elements = ['2', '6', 'a', 'e']
-    
+    locally_administered_elements = ["2", "6", "a", "e"]
+
     bdaddr[1] = secrets.choice(locally_administered_elements)
     # (5, 2, 3, 0, c, 4, a, 1, 9, c, 1, e) -> 5230c4a19c1e
-    bdaddr = ''.join(bdaddr)
+    bdaddr = "".join(bdaddr)
     # 52 0x30 0xc4 0xa1 0x9c 0x1e
-    bdaddr = ' 0x'.join(bdaddr[i:i+2] for i in range(0, len(bdaddr), 2))
+    bdaddr = " 0x".join(bdaddr[i : i + 2] for i in range(0, len(bdaddr), 2))
     # 0x52 0x30 0xc4 0xa1 0x9c 0x1e
-    return '0x' + bdaddr
+    return "0x" + bdaddr
+
 
 def main():
     parser = argparse.ArgumentParser(description="Contact tracing beacon trasmitter")
@@ -150,6 +133,7 @@ def main():
         args.database = ":memory:"
 
     # Setup logging
+    global daemon
     daemon = Daemon("beacon_tx", args)
     global logger
     logger = daemon.get_logger()
@@ -174,13 +158,30 @@ def main():
             bdaddr = bdaddr.split()
 
             # Change local device bdaddr
-            run_command(["hcitool", "-i", interface, "cmd", "0x3f", "0x001", bdaddr[5], bdaddr[4], bdaddr[3], bdaddr[2], bdaddr[1], bdaddr[0]])
-            
+            daemon.run_command(
+                [
+                    "hcitool",
+                    "-i",
+                    interface,
+                    "cmd",
+                    "0x3f",
+                    "0x001",
+                    bdaddr[5],
+                    bdaddr[4],
+                    bdaddr[3],
+                    bdaddr[2],
+                    bdaddr[1],
+                    bdaddr[0],
+                ]
+            )
+
             # Enable the bluetooth interface
-            run_command(["hciconfig", interface, "up"])
-            
+            daemon.run_command(["hciconfig", interface, "up"])
+
             # Enable LE advertising
-            run_command(["hcitool", "-i", interface, "cmd", "0x08", "0x000a", "01"])
+            daemon.run_command(
+                ["hcitool", "-i", interface, "cmd", "0x08", "0x000a", "01"]
+            )
 
             set_transmit(interface, ephid, args.rssi)
             current_ephid = ephid
@@ -191,7 +192,7 @@ def main():
         sleeper.sleep(EPOCH_LENGTH / 60)
         if sleeper.signaled:
             # Stop advertising
-            run_command(["hciconfig", interface, "noleadv"])
+            daemon.run_command(["hciconfig", interface, "noleadv"])
             exit(0)
         if args.test:
             break

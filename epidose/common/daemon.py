@@ -21,6 +21,7 @@ __license__ = "Apache 2.0"
 
 import logging
 import sys
+import subprocess
 
 
 class Daemon(object):
@@ -59,3 +60,20 @@ class Daemon(object):
     def get_args(self):
         """Return the parsed arguments passed to the constructor."""
         return self.args
+
+    def run_command(self, cmd):
+        """Run (or simulate the running of) the specified command.
+        Log the command to be run.
+        Do not run the command if dry_run is set.
+        Log operating system and command errors.
+        """
+        self.logger.debug(" ".join(cmd))
+
+        try:
+            result = subprocess.run(cmd, check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            self.logger.error(f"{cmd[0]} failed with code {e.returncode}: {e.stderr}")
+        except OSError as e:
+            self.logger.error(f"Failed to run {cmd[0]}: {e.strerror}")
+        finally:
+            return result
