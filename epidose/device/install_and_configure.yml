@@ -145,6 +145,14 @@
         regexp: '#dtparam=spi=on'
         replace: 'dtparam=spi=on'
 
+    - name: disable wlan0 on reboot
+      tags: production, development
+      become: yes
+      become_user: root
+      lineinfile: dest=/etc/rc.local
+        line="ip link set wlan0 down"
+        insertbefore="exit 0"        
+
     # Delete pi user
     - name: remove pi user
       tags: delete
