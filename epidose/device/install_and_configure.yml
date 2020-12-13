@@ -126,7 +126,7 @@
       become_user: root
       blockinfile: |
         dest=/etc/wpa_supplicant/wpa_supplicant.conf backup=yes
-        content='network={
+        content='
             network={
                     ssid="eduroam"
                     scan_ssid=1
