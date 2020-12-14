@@ -58,12 +58,10 @@ wps_led_blink()
 # of the wps_led_blink function
 wps_connect()
 {
-  network_status=$(ifconfig wlan0 | grep "inet ")
 
   # Check if device is connected to any network
-  if [ ! -z "$network_status" ] ; then
-    # If connected to a network then return
-    return 0
+  if check_if_ip_obtained; then
+    return 0;
   fi
 
   log "Initiating WPS connection"
@@ -112,17 +110,110 @@ wps_connect()
   return "$exit_code"
 }
 
+# Check whether the device has obtained
+# an IP address from the dhclient
+# preconditions: WiFi should be turned on
+# Returns 0 if the device has an IP address
+# or 1 if not
+check_if_ip_obtained()
+{
+  get_ip_address=$(ifconfig wlan0 | grep "inet ")
+
+  # Check if device has an IP address
+  if [ -z "$get_ip_address" ] ; then
+    log "Failed to connected to network"
+    return 1
+  fi
+
+  # If the device has received an IP address,
+  # then return 0
+  log "Successfully connected to network"
+  return 0
+}
+
+# Try to establish network connection
+# with the configurations stored in
+# the wpa_supplicant.conf file
+# precondition: WiFi should be turned on
+# Returns 0 if the device has successfully
+# connected to a network or 1 if not
+connect_to_saved_network()
+{
+  # Check if network $1 is in range
+  get_network_if_in_range=$(wpa_cli -i wlan0 scan_results | grep "$1")
+  if [ -z "$get_network_if_in_range"  ]; then
+    log "Network $1 not in range"
+    return 1
+  fi
+
+  # Get $1 network's id, list_networks checks the /etc/wpa_supplicant/wpa_supplicant.conf file
+  get_network_id=$(wpa_cli list_networks | grep "$1" | cut -f 1)
+  if [ -z "$get_network_id" ]; then
+    log "Network $1 configurations may be missing from wpa_supplicant.conf"
+    return 1
+  fi
+
+  # Try to connect to network $1
+  if ! wpa_cli -i wlan0 select_network "$get_network_id"; then	
+    log "Could not connect to network $1"
+    log "Maybe $1 configurations are not correctly defined in the wpa_supplicant.conf"
+    log "or the $1 network the device trying to connect has different password"
+    return 1
+  fi
+
+  # Get an IP address
+  dhclient wlan0
+  if ! check_if_ip_obtained; then
+    return 1
+  fi
+
+  return 0
+}
+
+# Checks if the device can connect
+# first to Eduroam, then to Epidose backup,
+# and then to an WPS-supported network
+# precondition: none
+# Returns 1 if the device failed
+# to connect to any of the networks
+select_network()
+{
+  log "Trying to connect to eduroam"
+  if connect_to_saved_network eduroam; then
+    wps_led_blink green
+    return 0
+  fi
+
+  log "Trying to connect to epidose"
+  if connect_to_saved_network epidose; then
+    wps_led_blink green
+    return 0
+  fi
+
+  log "Trying to connect with WPS"
+  if wps_connect; then
+   return 0
+  fi
+
+  return 1
+}
+
 while : ; do
   # Wait for the Wifi button to be pressed
   run_python device_io --wifi-wait
   wifi_acquire
-  if wps_connect; then
+
+  # Check if device can connect to Eduroam or Epidose backup network
+  if select_network; then
     # Stop the sleep process of update_filter_d to get a new filter
     log "Killing update_filter_d's sleep process" 
     kill -9 "$(cat "$SLEEP_UPDATE_FILTER_PID")"
     # Allow time for update_filter to also acquire the WiFi
     sleep 5
+  else
+    log "Failed to connect to any network"
   fi
+
   run_python check_interface_risk "$FILTER" || :
   wifi_release
 done
