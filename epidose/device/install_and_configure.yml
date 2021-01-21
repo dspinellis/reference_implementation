@@ -62,7 +62,7 @@
       apt:
         name: ['git', 'libbluetooth-dev', 'libglib2.0-dev', 'python3-dev',
         'python3-setuptools', 'shellcheck', 'sqlite3', 'virtualenv',
-        'dh-virtualenv', 'debhelper', 'supervisor']
+        'dh-virtualenv', 'debhelper', 'supervisor', 'hostapd', 'dnsmasq']
 
     - name: setup production environment
       tags: production
@@ -144,7 +144,7 @@
         dest=/etc/network/interfaces.d/wlan0
         content='# The wireless network interface
                 allow-hotplug wlan0
-                iface wlan0 inet manual
+                iface wlan0 inet auto
                 wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf'
 
     - name: create certifcate file for Eduroam
@@ -242,7 +242,149 @@
       become: yes
       become_user: root
       lineinfile: dest=/etc/rc.local
-        line="ip link set wlan0 down"
+        line="ip link set wlan0 up"
+        insertbefore="exit 0"
+
+    # This part and onwards is necessary for the Cuckoo distribution server
+    - name: add IP address range for uap0
+      tags: production, development
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/dhcpcd.conf
+        content='interface uap0
+                   static ip_address=192.168.50.1/24
+                   nohook wpa_supplicant'
+
+    - name: remove dnsmasq.conf file
+      tags: production, development
+      become: yes
+      become_user: root
+      file:
+        path: /etc/dnsmasq.conf
+        state: absent
+
+    - name: create dnsmasq.conf
+      tags: production, development
+      become: yes
+      become_user: root
+      file:
+        path: /etc/dnsmasq.conf
+        state: touch
+        owner: root
+        group: root
+        mode: 644
+
+    - name: modify dnsmasq.conf
+      tags: production, development
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/dnsmasq.conf
+        content='interface=lo,uap0
+                 bind-interfaces
+                 server=8.8.8.8
+                 domain-needed
+                 bogus-priv
+                 dhcp-range=192.168.50.50,192.168.50.150,12h'
+
+    - name: create hostapd.conf file
+      tags: production, development
+      become: yes
+      become_user: root
+      file:
+        path: /etc/hostapd/hostapd.conf
+        state: touch
+        owner: root
+        group: root
+        mode: 644
+
+    - name: modify dnsmasq.conf
+      tags: production, development
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/hostapd/hostapd.conf
+        content='channel=1
+                 ssid=cuckooFilterDistributor
+                 wpa_passphrase=epidose123
+                 interface=uap0
+                 hw_mode=g
+                 macaddr_acl=0
+                 auth_algs=1
+                 ignore_broadcast_ssid=0
+                 wpa=2
+                 wpa_key_mgmt=WPA-PSK
+                 wpa_pairwise=TKIP
+                 rsn_pairwise=CCMP
+                 driver=nl80211'
+
+    - name: set hostapd default config file
+      tags: production, development
+      become: yes
+      become_user: root
+      replace:
+        path: /etc/default/hostapd
+        regexp: '#DAEMON_CONF=""' 
+        replace: 'DAEMON_CONF="/etc/hostapd/hostapd.conf"'
+    
+    - name: create wifistart file
+      tags: production, development
+      become: yes
+      become_user: root
+      file:
+        path: /usr/local/bin/wifistart
+        state: touch
+        owner: root
+        group: root
+        mode: 644
+   
+    - name: fill wifistart file
+      tags: production, development
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/usr/local/bin/wifistart
+        content='#!/bin/bash
+
+                # Redundant stops to make sure services are not running
+                echo "Stopping network services (if running)..."
+                systemctl stop hostapd.service
+                systemctl stop dnsmasq.service
+                systemctl stop dhcpcd.service
+
+                #Make sure no uap0 interface exists (this generates an error; we could probably use an if statement to check if it exists first)
+                echo "Removing uap0 interface..."
+                iw dev uap0 del
+
+                #Add uap0 interface (this is dependent on the wireless interface being called wlan0, which it may not be in Stretch)
+                echo "Adding uap0 interface..."
+                iw dev wlan0 interface add uap0 type __ap
+
+                # Bring up uap0 interface. Commented out line may be a possible alternative to using dhcpcd.conf to set up the IP address.
+                ifconfig uap0 up
+
+                # Start hostapd. 10-second sleep avoids some race condition, apparently. It may not need to be that long. (?) 
+                echo "Starting hostapd service..."
+                systemctl unmask hostapd.service
+                systemctl start hostapd.service
+                sleep 10
+
+                #Start dhcpcd. Again, a 5-second sleep
+                echo "Starting dhcpcd service..."
+                systemctl start dhcpcd.service
+                sleep 5
+
+                echo "Starting dnsmasq service..."
+                systemctl unmask dnsmasq.service
+                systemctl start dnsmasq.service'
+
+    - name: execute wifistart on boot
+      tags: production, development
+      become: yes
+      become_user: root
+      lineinfile: dest=/etc/rc.local
+        line="bash /usr/local/bin/wifistart"
         insertbefore="exit 0"
 
     # Delete pi user
