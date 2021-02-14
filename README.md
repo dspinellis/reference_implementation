@@ -412,6 +412,38 @@ sudo ansible-playbook deploy.yml --extra-vars "server_name=hostname_of_server"
 The *server_name* can be the domain name you have bought (e.g., epidose.ellak.gr)
 After executing the above script, the `ha-server` should be up and running.
 
+## Signing cuckoo filter
+
+After deploying the back-end Health Authority server,
+you need to sign Cuckoo filters using a digital signature.
+But first, you need to create a public/private key pair in order
+to sign the Cuckoo filters.
+To generate the private/public key pair execute the following steps:
+
+```sh
+cd epidose/epidose/back_end
+sudo ./cuckoo_filter_digital_signature.sh -g
+```
+
+The above command will generate a public/private key pair
+and store it under the `/var/lib/epidose/` directory.
+The private key is needed to create the digital signature
+to sign the Cuckoo filters as follows:
+
+```sh
+cd epidose/epidose/back_end
+sudo ./cuckoo_filter_digital_signature.sh -s pathTowardsTheCuckooFilter
+```
+
+The above command will generate a digital signature
+and store it under the `/var/lib/epidose/` directory.
+The digital signature along with the public key
+*must* be distributed among the Epidose device users.
+The public key is needed to verify the digital signature
+of the received Cuckoo filter on the Epidose device.
+This is done in the `/epidose/device/util.sh`
+using the `verifyFilter` function.
+
 
 ## End-to-end operation
 

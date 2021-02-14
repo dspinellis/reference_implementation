@@ -47,7 +47,13 @@ SCRIPT_DIR="$(dirname "$0")"
 PYTHON=venv/bin/python
 
 # Get wlan0 MAC address
-MAC_ADDRESS=$(ifconfig wlan0 | egrep -o '([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}')
+MAC_ADDRESS=$(ifconfig wlan0 | grep -oE '([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}')
+
+# Path towards the public key
+PUBLIC_KEY="/var/lib/epidose/publicFilter.pem"
+
+# Path of the signature
+SIGNATURE_PATH="/var/lib/epidose/signature.sha256"
 
 # Log with a timestamp
 log()
@@ -170,6 +176,24 @@ get_filter_validity_age()
   fi
 }
 
+
+# Verify the a signed cuckoo filter
+# preconditions: a signed filter must exist
+# Return 1 if failed to verify a filter's signature
+# or 0 if succeeded
+verifyFilter()
+{
+  #Verify signed signature
+  if ! openssl dgst -sha256 -verify "$PUBLIC_KEY" -signature "$SIGNATURE_PATH" "$1"; then
+    log "Failed to verify digital signature; removing filter.bin"
+    rm "$FILTER"
+    return 1
+  fi
+
+  log "Filter's digital signature verified"
+  return 0
+}
+
 # Obtain a (new) version of the Cuckoo filter
 # preconditions: WiFi should be turned on
 # Returns an exit code that defines
@@ -183,6 +207,12 @@ get_new_filter()
     # Atomically replace existing filter with new one
     mv "$FILTER.new" "$FILTER"
     log "New filter obtained: $(stat -c %s "$FILTER") bytes"
+
+    # Check filter's digital signature
+    if ! verifyFilter "$FILTER"; then
+      return 1
+    fi
+
     return 0
   else
     exit_code=$?
