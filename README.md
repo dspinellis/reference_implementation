@@ -384,33 +384,28 @@ database by running `utils/client-db-report.sh`.
 
 ## Running the back-end Health Authority server code
 
-After downloading the project you can run the health authority server code
-on a (hopefully) more powerful Raspberry-Pi host as follows.
-
-```sh
-sudo mkdir -p /var/lib/epidose
-sudo venv/bin/gunicorn epidose.back_end.ha_server:app --daemon --pid=/run/ha_server.pid --access-logfile=/var/log/ha_server_access_log --disable-redirect-access-to-syslog --error-logfile=/var/log/ha_server_error_log --capture-output --bind=0.0.0.0:5010
-```
-
-You can then monitor the server's operation with
-`tail -F /var/log/ha_server_error_log` and
-`tail -F /var/log/ha_server_access_log`.
-
-
-To install the `ha-server` through the Ansible script execute the following steps
+Execute the following steps to install the `ha-server` through the Ansible script
 on the machine you like to deploy it.
-The step below will also install and configure an Nginx server
+The steps below will also install and configure an Nginx server
 for the `ha-server`.
+Note that even an empty `update.sh` file should exist in the `/var/lib/epidose` path
+before executing the `deploy.yml` script, otherwise the server will throw a *not found* messsage
+anytime a device tries to get a new update.
 
 ```sh
 sudo apt install git ansible
 git clone https://github.com/eellak/epidose
+sudo touch /var/lib/epidose/update.sh
 cd epidose/epidose/back_end
 sudo ansible-playbook deploy.yml --extra-vars "server_name=hostname_of_server"
 ```
 
 The *server_name* can be the domain name you have bought (e.g., epidose.ellak.gr)
 After executing the above script, the `ha-server` should be up and running.
+
+You can then monitor the server's operation with
+`tail -F /var/log/ha_server_error_log` and
+`tail -F /var/log/ha_server_access_log`.
 
 
 ## End-to-end operation
