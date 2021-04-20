@@ -108,3 +108,11 @@
         name: update cert every 4 days
         day: "*/4"
         job: "/usr/bin/certbot renew --quiet && service nginx reload"
+
+    - name: add cron entry to generate a new filter every 6 hours
+      become: yes
+      become_user: root
+      cron:
+        name: generate a new filter very 6 hours
+        hour: "*/6"
+        job: "/home/sgeorgiou/epidose/venv/bin/python /home/sgeorgiou/epidose/epidose/back_end/create_filter.py -v -d /var/lib/epidose/filter.bin"
