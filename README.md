@@ -27,6 +27,7 @@ code, gratefully acknowledging the team's amazing work.
 - [Hardware](#hardware)
 - [What is implemented](#what-is-implemented)
 - [What is missing](#what-is-missing)
+- [Legal documents](#legal-documents)
 - [Installing the reference implementation](#installing-the-reference-implementation)
 - [Running the client code](#running-the-client-code)
 - [Running the back-end Health Authority server code](#running-the-back-end-health-authority-server-code)
@@ -251,6 +252,13 @@ the infection risk.)  These are marked in the code with `TODO` comments.
 Also missing is the health authority user interface and upload key protocol,
 which must be designed in cooperation with each health authority where
 EPIDOSE will be deployed.
+
+## Legal documents
+The `doc` directory contains (in English and in Greek) templates
+for the EPIDOSE privacy policy and the ΕPIDOSE pilot
+participant’s consent information sheet.
+These must be tailored according to the particular deployment scenario.
+
 
 ## Installing the reference implementation
 

@@ -1,0 +1,141 @@
+Αγγλικά
+Name/description of the Organization
+
+Contact person responsible for the activity………….
+
+Purpose of the research/ pilot and of personal data collection
+
+
+The EPIDOSE device is intended to be deployed during the COVID-19 pandemic and pursues the aim of fostering private and public health by early detection of potential exposition to the virus. 
+
+
+Contact tracing via smartphone apps has been widely used in EU countries and elsewhere as an important way to control and limit the spread of the COVID-19 epidemic. However, basing contact-tracing on phone apps has several limitations. According to market reports, while in higher income countries smartphone penetration is over 60%, in lower income ones it drops significantly, even to less than 20%. Even in higher income countries, smartphone penetration declines significantly with increased age and reduced income. Also, Bluetooth-based contact tracing apps may not be able to run on older smartphone models, and many fear compromised privacy when running such an app on their phone. 
+
+
+
+Contact tracing app solutions benefit only those using them by flagging at an early stage one at risk. Therefore, older people who are usually less accustomed to technology (and also run greater risks) and less privileged society members are at a disadvantage.
+
+
+Exposure tracking solutions can only be successful if adopted by a significant percentage of the population. In lower income regions and countries (which could be devastated by COVID-19), smartphone-based solutions are unlikely to be effective due to a lack of critical mass. The proposed epidemic dosimeter addresses the above limitations.
+
+
+
+A general description of the project/ pilot. 
+
+This repository provides an open source software reference implementation for an epidemic dosimeter. Τhe epidemic dosimeter tracks potential exposure to viruses or bacteria associated with an epidemic. 
+
+The dosimeter measures a person's exposure to an epidemic, such as COVID-19, based on exposure to contacts that have been tested positive. 
+
+The EPIDOSE device uses Bluetooth technology to measure the distance and duration of the encounter between people who have installed the app. This is achieved by the devices exchanging temporary encrypted random IDs called Random Proximity Indicators (RPIs). The RPIs are generated at 15 minutes intervals based on a daily random key called Temporary Exposure Key (TEK).
+
+
+If people using the device test positive for COVID-19, they inform the “health authority” defined (in the pilot phase there will be no external “health authority” as processing will take place exclusively in the research-testing environment; also in the pilot phase, it is not necessary for real COVID-19 tests to be performed; participating users will be diagnosed as positive according to research scnarios). 
+
+When an EPIDOSE user tests positive for COVID-19, he/she may choose to report his/her  status so that other users that have come in close contact with him/her can be warned. To do this, the diagnosed user will request a tele-Transaction Authorization number (teleTAN) from the health authority. In the pilot phase, where no real tests and diagnoses will take place, the role of the health authority will be performed by the experiment designers.
+
+
+After a user  is diagnosed, and only with his/her consent, he/she uploads from their device the TEKs of the last 14 days to the backend server. These TEKs are now called Diagnosis Keys (DKs).
+
+The server transmits the DKs to other EPIDOSE users’ devices, which compute their infection risk locally , on their EPIDOSE device.
+
+From this data, the identity of the user  cannot be derived by the server or by the devices of other users.
+Before this point, no data other than the RPIs leaves the EPIDOSE device.
+
+In this way people can inform other EPIDOSE users of their exposure risk on a voluntary basis. The DKs of the person diagnosed with COVID-19 are made available to all EPIDOSE users. Based on the DKs received, an exposure risk check is only performed on EPIDOSE device. If it is positive, the app will display a warning as follows
+
+•	Heartbeat (double) flashing green: Normal isolated operation
+•	Green flashes: other exposure notification devices are being detected
+•	Orange flashes: other exposure notification devices are close
+•	Slow flashing red: User may have been exposed and should contact a health provider.
+•	Rapidly flashing red: User has been tested positive and needs to self-quarantine. (To be used in areas lacking better means to contact people.)
+
+The epidemic dosimeter is designed to be widely accessible and to safeguard privacy. Specifically, it is designed to run on the $10 open-hardware Raspberry Pi Zero-W computer, with a minimal user interface, comprising LED indicators regarding operation and exposure risk and a physical interlock switch to allow the release of contact data. 
+
+The epidemic dosimeter works by acting as a Bluetooth Low Energy (BLE) beacon to transmit periodically-changing random identifiers (the RPIs), and as a corresponding beacon receiver to track individuals carrying a dosimeter located in the vicinity. 
+
+By basing its code on the DP3T reference implementation it should also interoperate with the corresponding smartphone applications. The dosimeter's design calls for it to be pre-configured to obtain possibly infected contacts and software updates through a global WiFi sharing network, such as that offered by fon.
+
+Contact tracing is decentralized, e.g. each device can use the data (DKs) from the backend to locally compute whether the device’s user was in physical proximity of an infected person and potentially at risk of infection. 
+
+The system is designed such that no entity beyond a user’s EPIDOSE device processes or stores any identifiable personal data about the user. As a whole, the system fulfils processing goals that
+would usually require personal data to be transmitted. 
+None of the data used to achieve proximity tracing need be characterized
+as personal data, as no actors holding the data have the ability to re-identify it with means reasonably likely to be used. 
+
+
+At no point in time does this procedure allow connections to be made to the user, his identity identity or his  location.
+Personal data are anonymized/ are collected and processed in a way that does not allow the identification of the used. During the pilot phase personal data that may lead to the identification of volunteers will be collected and processed solely for training and evaluation of functionality, efficiency and security (to ensure/confirm anonymization etc.).
+The results (without any reference to identified/ identifiable natural persons and their data) of this investigation may be published in scientific journals or conferences and may be used in other (content-related) projects. 
+
+
+
+
+We collect and further process only personal data that is strictly necessary to fulfil the purpose of our research. … 
+
+Data collected will be used only for the purposes of research and of system performance evaluation and proof-of-concept validation…
+
+This comes with the important benefit
+that the server cannot learn the social graph, which is data that can easily be repurposed
+and misused in ways that individuals would not reasonably expect and may not wish
+
+Personal data will be retained only for the lifetime of the project  (………) and deleted after the project has ended…. 
+
+The RPIs and DKs are deleted from the device’s memory after 14 days. The infection risk determined by the risk calculation on the device is deleted from the app memory after each update, but after 14 days at the latest.
+
+
+
+All necessary and adequate measures will be taken to ensure the security of data collected. The …… project assures you that any data you provide will be kept strictly confidential. …. 
+
+Your data will be accessed and processed by authorized researchers and developers to the extent that is necessary for the purposes of the project….
+ Your data will not be shared with any parties outside of the project.
+
+Please take time to read and understand the following information, and if you agree with the content sign the consent form overleaf. Please feel free to ask any questions if there is anything that you require an explanation on
+
+
+
+Specific information must be provided in order for the participant to understand how the activity will be conducted. 
+
+Possible risks and ways to mitigate them
+
+
+The epidemic dosimeter is designed to be widely accessible and to safeguard privacy.
+The software is based on the DP3T contact tracing "unlinkable" design and corresponding reference implementation code.
+It is designed to minimise the risks of data use for new purposes
+
+
+
+Τhe type of data being collected on Bluetooth connections could reveal information about families, societies, and communities. To address this issue, the system has been designed to ensure it is never centralised, and such a risk does not materialise. 
+
+
+
+
+Accordingly, the system relies on the collection and sharing of ephemeral identifiers that cannot be directly linked to any individual. It is considered that under normal operation, none of the data that leaves a user's device must be characterized as personal data, as no actor has the ability to re-identify it with means reasonably likely to be used. 
+
+
+However, reidentification of individual users cannot be entirely excluded and is inherent to any proximity tracing system. 
+
+
+However, it should be noted that contact tracing of every type brings privacy risks even if carried out carefully. Individuals in small communities may receive alerts and calls which, when compared, lead them to identify (rightly or wrongly) the source of their at-risk status 
+
+
+
+
+. 
+
+
+
+Incentives 
+
+You will not be provided any incentive to take part in the project/pilot 
+You will contribute to validate and enhance the research for detecting and interrupting the spread of infection 
+If you use the device, you are making an active contribution to curbing the pandemic. The faster that people who have been diagnosed with COVID-19 and their contacts can be informed, the less the virus can spread. 
+Without this technical assistance, staff at the health authorities would have to track each case personally. This is very time consuming, and it is often not even possible to find every single person.
+
+
+
+[The participation in this <planned event/activity> is completely voluntary]
+Refusal to participate will not lead to any adverse consequences.
+Participants are free without negative consequences, to decline to take part or withdraw consents and participation to the research without providing an explanation at any time up until the end of the project in……. If participants choose to withdraw any data collected will be destroyed. 
+Participants have the right to access to data pertaining/related to them that are collected and processed in the context and for the purposes of the project.
+Participants have the right to request information, access, rectification, erasure (right to be forgotten) of their personal data or restriction of processing of personal data or to object to further processing as well as the right to lodge a complaint to the – competent- Data Protection Authority. 
+
