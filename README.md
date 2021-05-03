@@ -244,18 +244,13 @@ The following programs are available in the `epidose` directory.
 All programs can be run with a _--help_ argument to obtain usage information.
 
 ## What is missing
-The server and the device automation and configuration are under construction.
-Our aim is to automate their configuration with suitable
-[Puppet](https://puppet.com/) scripts.
-
 In some places the code takes shortcuts or makes simplifications (e.g.
 not using the number of messages and their strength (RSSI) for estimating
 the infection risk.)  These are marked in the code with `TODO` comments.
 
-Also missing are the following.
-
-* The health authority user interface and upload key protocol
-* The design for 3D-printing the enclosure
+Also missing is the health authority user interface and upload key protocol,
+which must be designed in cooperation with each health authority where
+EPIDOSE will be deployed.
 
 ## Installing the reference implementation
 
