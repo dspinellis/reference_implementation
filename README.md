@@ -1,6 +1,6 @@
 # Epidose: A privacy-preserving epidemic dosimeter based on contact tracing
 
-This repository provides an open source software
+This repository provides an open source software and hardware
 reference implementation for an _epidemic dosimeter_.
 Just as a [radiation dosimeter](https://en.wikipedia.org/wiki/Dosimeter)
 measures dose uptake of external ionizing
