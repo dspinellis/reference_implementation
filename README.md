@@ -668,10 +668,15 @@ Below are links to information directly relevant to this project.
 
 
 ## License
-
 Unless otherwise noted, this code is licensed under the Apache 2.0 license,
 as found in the LICENSE file.
 
 Some files under `epidose/hardware/firmware` are copyrighted
 by STMicroelectronics and licensed under the
 [BSD 3-Clause license](https://opensource.org/licenses/BSD-3-Clause).
+
+## Acknowledgment
+This project is partly funded through the EOSC Secretariat.
+EOSCsecretariat.eu has received funding from the European Union's
+Horizon Programme call H2020-INFRAEOSC-05-2018-2019, grant
+Agreement number 831644.
