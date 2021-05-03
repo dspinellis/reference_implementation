@@ -34,6 +34,7 @@ code, gratefully acknowledging the team's amazing work.
 - [Development](#development)
 - [More information](#more-information)
 - [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 
 ## Rationale
@@ -675,8 +676,8 @@ Some files under `epidose/hardware/firmware` are copyrighted
 by STMicroelectronics and licensed under the
 [BSD 3-Clause license](https://opensource.org/licenses/BSD-3-Clause).
 
-## Acknowledgment
-This project is partly funded through the EOSC Secretariat.
+## Acknowledgements
+EPIDOSE is partly funded through the EOSC Secretariat.
 EOSCsecretariat.eu has received funding from the European Union's
 Horizon Programme call H2020-INFRAEOSC-05-2018-2019, grant
 Agreement number 831644.
