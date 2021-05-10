@@ -530,6 +530,14 @@ restart selective daemons by running *supervisorctl* with appropriate
 arguments.
 
 
+A mechanism also exist to update the device configurations by using the Ansbile script.
+For each new update,
+add the necessary changes in the `epidose/device/install_and_configure.yml`
+with a tag, for example `update_2`.
+To apply the update on the device add the following
+in the `update.sh` file: `echo update_2 > /var/lib/epidose/latest_update`
+This will ensure that the device is updated up unitl the `update_2` tag.
+
 
 ### Update server's URL
 To update the server's URL where the epidose device

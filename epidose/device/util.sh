@@ -27,6 +27,12 @@ FILTER=/var/lib/epidose/client-filter.bin
 # Location of the update script
 UPDATE=/var/lib/epidose/update.sh
 
+# Location of the current update version
+CURRENT_UPDATE=/var/lib/epidose/current_update
+
+# File with the latest update for the Ansible
+LATEST_UPDATE=/var/lib/epidose/latest_update
+
 # Location of update_filter_d sleep process file
 export SLEEP_UPDATE_FILTER_PID=/var/run/epidose_update_filter_sleep
 
@@ -191,6 +197,54 @@ get_new_filter()
   fi
 }
 
+# Check which is the last performed update
+# on the current device and update to the latest if needed.
+# precondition: the sh $UPDATE should write
+# in the file /var/lib/epidose/latest_update
+# which is the latest needed update tag.
+# For instance, $ echo "update_10" > /var/lib/epidose/latest_update
+# in order to update until the 10th update tag.
+update_ansible()
+{
+  # Get latest available update number
+  latest_update=$(awk -F"_" '{print $2}' "$LATEST_UPDATE")
+
+  # Check if the current_update file exists,
+  # if not, start from the first update tag
+  if [ ! -f "$CURRENT_UPDATE" ]; then
+    log "No current_update found, starting from update_1"
+    starting_update=1
+    echo update_1 >> "$CURRENT_UPDATE"
+  else
+    starting_update=$(awk -F"_" '{print $2}' "$CURRENT_UPDATE")
+    log "Updating up to update_$latest_update"
+  fi
+
+  # If the starting and latest are equal exit
+  if [ "$starting_update" = "$latest_update" ]; then
+    return 0
+  fi
+
+  # If the starting is larger than 1, then increase
+  # it by one to avoid executing an unnecessary update
+  if [ "$starting_update" -gt 1 ]; then
+    starting_update=$((starting_update+1))
+  fi
+
+  # Execute Ansible with all update tag until the latest update tag
+  for i in $(seq "$starting_update" "$latest_update"); do
+    ansible-playbook /home/pi/epidose/epidose/device/install_and_configure.yml --tags "update_$i"
+  done
+
+  # Update current_update file with the latest update
+  sed -i '1s/.*/update_'"$latest_update"'/' "$CURRENT_UPDATE"
+
+  # Delete latest_update file
+  rm "$LATEST_UPDATE"
+
+  return 0
+}
+
 # Check and update device if necessary
 # preconditions: WiFi should be turned on
 check_for_updates()
@@ -200,6 +254,7 @@ check_for_updates()
     "$SERVER_URL/update?mac=$MAC_ADDRESS" 2>&1) ; then
     log "New update script obtained: $(stat -c %s "$FILTER") bytes"
     sh $UPDATE
+    update_ansible
   else
     log "Unable to get update script: $err"
   fi
