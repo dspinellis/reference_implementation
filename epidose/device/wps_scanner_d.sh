@@ -41,13 +41,14 @@ wps_led_blink()
 {
   run_python device_io --"$1"-on
   case "$1" in
-	"green") log "Obtained network connection"; return 0;;
-	"red") log "Failed to connect to a network"; return 1;;
-	"orange") log "No WPS network found in the area"; return 2;;
-	*) log "The given LED option is not available"return 3;;
+	"green") log "Obtained network connection"; networkStatusCode=0;;
+	"red") log "Failed to connect to a network"; networkStatusCode=1;;
+	"orange") log "No WPS network found in the area"; networkStatusCode=2;;
+	*) log "The given LED option is not available"; networkStatusCode=3;;
   esac
   sleep 3
   run_python device_io --"$1"-off
+  echo "$networkStatusCode"
 }
 
 # Connect to a known network if available,
@@ -59,7 +60,6 @@ wps_led_blink()
 wps_connect()
 {
 
-  # Check if device is connected to any network
   if check_if_ip_obtained; then
     return 0;
   fi
@@ -73,8 +73,7 @@ wps_connect()
   network_with_strongest_signal=$(wpa_cli -i wlan0 scan_results | grep WPS | sort -r -k3 | tail -1)
   if [ -z "$network_with_strongest_signal" ] ; then
     # If there is no available WPS network in the area, turn on the orange LED light	
-    wps_led_blink orange
-    exit_code=$?
+    exit_code=$(wps_led_blink orange)
 
     # Release watchdog
     rm "$SUSPEND_WATCHDOG_LED"
@@ -96,12 +95,10 @@ wps_connect()
   # Check whether the connection is established and light up the LED accordingly
   if [ -z "$get_ip_address" ] ; then
     # If failed to connect to a network, turn on the red LED light
-    wps_led_blink red
-    exit_code=$?
+    exit_code=$(wps_led_blink red)
   else
     # If connected to a network, turn on the green LED light
-    wps_led_blink green
-    exit_code=$?
+    exit_code=$(wps_led_blink green)
   fi
 
   # Release watchdog LED suspension
@@ -213,6 +210,6 @@ while : ; do
     log "Failed to connect to any network"
   fi
 
-  run_python check_infection_risk "$FILTER" || :
   wifi_release
+  run_python check_infection_risk "$FILTER" || :
 done

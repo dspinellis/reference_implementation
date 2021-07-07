@@ -26,7 +26,6 @@ from epidose.device.device_io import cleanup, red_led_set, setup_leds
 import struct
 import sys
 
-
 def main():
     parser = argparse.ArgumentParser(
         description="Read Cuckoo filter and check against contacts"
@@ -77,7 +76,6 @@ def main():
         else:
             red_led_set(False)
             exit_code = 1
-        cleanup()
         sys.exit(exit_code)
 
 
