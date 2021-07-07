@@ -245,6 +245,219 @@
         line="ip link set wlan0 down"
         insertbefore="exit 0"
 
+    # This part and onwards is necessary for the Cuckoo distribution server
+    - name: Mask dhcpcd and networking services
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: "{{ item }}"
+        masked: yes
+      with_items:
+        - networking.service
+        - dhcpcd.service
+
+    - name: Move interfaces file
+      tags: update_1
+      become: yes
+      become_user: root
+      shell: |
+        mv /etc/network/interfaces /etc/network/interfaces~
+
+    - name: Move interfaces file
+      tags: update_1
+      become: yes
+      become_user: root
+      lineinfile:
+        path: /etc/resolvconf.conf
+        line: "resolvconf=NO"
+        insertbefore: BOF
+
+    - name: Enable Networkd and resolved services
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: "{{ item }}"
+        enabled: yes
+      with_items:
+        - systemd-networkd.service
+        - systemd-resolved.service
+
+    - name: Create symbolic link of resolv.conf
+      tags: update_1
+      become: yes
+      become_user: root
+      file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        state: link
+        force: yes
+
+    - name: create wpa_supplicant-wlan0 file
+      tags: update_1
+      become: yes
+      become_user: root
+      copy:
+        src: /etc/wpa_supplicant/wpa_supplicant.conf
+        dest: /etc/wpa_supplicant/wpa_supplicant-wlan0.conf
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: Disable wpa_supplicant service
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: wpa_supplicant.service
+        enabled: no
+
+    - name: Enable wpa_supplicant-wlan0 service
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: wpa_supplicant@wlan0.service
+        enabled: yes
+
+    - name: create wpa_supplicant-ap0 file
+      tags: update_1
+      become: yes
+      become_user: root
+      file:
+        path: /etc/wpa_supplicant/wpa_supplicant-ap0.conf
+        state: touch
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: fill in wpa_supplicant-ap0 file
+      tags: update_1
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/wpa_supplicant/wpa_supplicant-ap0.conf
+        content='country=GR
+                 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+                 update_config=1
+                 
+                 network={
+                   ssid="CuckooFilterDistributionServer"
+                   mode=2
+                   key_mgmt=WPA-PSK
+                   proto=RSN WPA
+                   psk="epidose123"
+                   frequency=2412
+                 }'
+
+    - name: create 08-wlan0.network file
+      tags: update_1
+      become: yes
+      become_user: root
+      file:
+        path: /etc/systemd/network/08-wlan0.network
+        state: touch
+        owner: root
+        group: root
+        mode: 0777
+
+    - name: fill in 08-wlan0.network file    
+      tags: update_1
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/systemd/network/08-wlan0.network
+        content='[Match]
+                 Name=wlan0
+                 [Network]
+                 DHCP=yes'
+
+    - name: create 12-ap0.network file
+      tags: update_1
+      become: yes
+      become_user: root
+      file:
+        path: /etc/systemd/network/12-ap0.network
+        state: touch
+        owner: root
+        group: root
+        mode: 0777
+
+    - name: fill in 12-ap0.network file    
+      tags: update_1
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/systemd/network/12-ap0.network
+        content='[Match]
+                 Name=ap0
+                 [Network]
+                 Address=192.168.4.1/24
+                 DHCPServer=yes
+                 [DHCPServer]
+                 DNS=84.200.69.80 1.1.1.1'
+
+    - name: Disable wpa_supplicant@ap0 service
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: wpa_supplicant@ap0.service
+        enabled: no
+
+    - name: create wpa_supplicant@ap0.service file
+      tags: update_1
+      become: yes
+      become_user: root
+      file:
+        path: /etc/systemd/system/wpa_supplicant@ap0.service
+        state: touch
+        owner: root
+        group: root
+        mode: 0622
+
+    - name: fill in wpa_supplicant@ap0.service file    
+      tags: update_1
+      become: yes
+      become_user: root
+      blockinfile: |
+        dest=/etc/systemd/system/wpa_supplicant@ap0.service
+        content='[Unit]
+                 Description=WPA supplicant daemon (interface-specific version)
+                 Requires=sys-subsystem-net-devices-wlan0.device
+                 After=sys-subsystem-net-devices-wlan0.device
+                 Conflicts=wpa_supplicant@wlan0.service
+                 Before=network.target
+                 Wants=network.target
+                 
+                 [Service]
+                 Type=simple
+                 ExecStartPre=/sbin/iw dev wlan0 interface add ap0 type __ap
+                 ExecStart=/sbin/wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant-%I.conf -Dnl80211,wext -i%I
+                 ExecStopPost=/sbin/iw dev ap0 del
+                 
+                 [Install]
+                 Alias=multi-user.target.wants/wpa_supplicant@%i.service'
+
+    - name: Enable wpa_supplicant@wlan0 service
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: wpa_supplicant@wlan0.service
+        enabled: yes
+
+    - name: Disable wpa_supplicant@ap0 service
+      tags: update_1
+      become: yes
+      become_user: root
+      service:
+        name: wpa_supplicant@ap0.service
+        enabled: no
+
     # Delete pi user
     - name: remove pi user
       tags: delete

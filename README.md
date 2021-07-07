@@ -326,6 +326,7 @@ cd epidose/epidose/device
 ```
 * Execute the Ansible script by providing the relevant command-line arguments (see [section](#Ansible))
 ```sh
+sudo ansible-playbook install_and_configure.yml --tags "cuckoo_filter_distribution"
 sudo ansible-playbook install_and_configure.yml --tags "production|development" --extra-vars "eduroam_network_psk=password_of_the_epidose_eduroam_account epidose_backup_network_psk=password_of_the_epidose_backup_wifi"
 cd /home/epidose/epidose/epidose/device
 sudo ansible-playbook install_and_configure.yml --tags "delete"
@@ -348,8 +349,11 @@ sudo reboot
 
 ### Ansible Tags And Extra Variables
 
-The _delete_ tag remoces the default _pi_ user
+The _delete_ tag removes the default _pi_ user
 and it does not require any command-line arguments.
+The *cuckoo_filter_distribution* tag configures
+an epidose device to be able to act as an access point
+in order to distribution fresh cuckoo filters.
 To install and prepare the environment to run the epidose,
 the tag _production_ should be used.
 In case you are willing to help the development team of epidose,
