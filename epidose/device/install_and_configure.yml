@@ -245,6 +245,14 @@
         line="ip link set wlan0 down"
         insertbefore="exit 0"
 
+    - name: avoid shutdown from update.sh
+      tags: development
+      become: yes
+      become_user: root
+      lineinfile: dest=/etc/rc.local
+        line="touch /tmp/development"
+        insertbefore="exit 0"
+
     # Delete pi user
     - name: remove pi user
       tags: delete
